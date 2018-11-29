@@ -1,6 +1,8 @@
 package personal.kudin.alex.tasks.solutions.beer52;
 
 
+import java.util.*;
+
 /**
  * This class here is for testing purposes
  */
@@ -8,10 +10,45 @@ public class Main {
 
     public static void main(String[] args) {
 
-        for(int  i = 6; i < 51; i++){
+        /**for(int  i = 6; i < 51; i++){
             BFSAlgorithm al = new BFSAlgorithm();
             System.out.println("i = " + i + " " + al.findQuantityOfBeerPacks(i).toString());
+        }*/
+
+        BeerInfo one = new BeerInfo("one", 0.5, 13);
+        BeerInfo two = new BeerInfo("two", 1, 10);
+        BeerInfo three = new BeerInfo("three", 0.5, 12);
+        BeerInfo four = new BeerInfo("four", 1, 1);
+        Map<String, BeerInfo> map1 = new HashMap<>();
+        map1.put("one", one);
+        Map<String, BeerInfo> map2 = new HashMap<>();
+        map2.put("two", two);
+        Map<String, BeerInfo> map3 = new HashMap<>();
+        map3.put("three", three);
+        Map<String, BeerInfo> map4 = new HashMap<>();
+        map4.put("four", four);
+
+        List<Map<String, BeerInfo>> order = new ArrayList<>();
+        order.add(map1);
+        order.add(map2);
+        order.add(map3);
+        order.add(map4);
+
+
+        //order.sort(Comparator.comparingDouble(o -> o.entrySet().iterator().next().getValue().getVolume()));
+        //Collections.reverse(order);
+
+        //System.out.println(order);
+
+        BFSAlgorithm al = new BFSAlgorithm();
+        List<Map<String, Content>> list = al.divideOrder(order);
+
+        for(Map<String, Content> map : list){
+            Map.Entry<String, Content> entry = map.entrySet().iterator().next();
+
+            System.out.println(entry.getKey() + " : " + entry.getValue().toString());
         }
+
     }
 }
 

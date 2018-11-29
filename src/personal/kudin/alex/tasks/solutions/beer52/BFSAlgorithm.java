@@ -33,7 +33,7 @@ public class BFSAlgorithm {
         double sum = 0;
         /*Find the overall sum of space taking by bottles in the order (assuming that we can put 2 of 0.5 bottles in one cell)*/
         for (Map<String, BeerInfo> elem : order) {
-            sum += elem.entrySet().stream().mapToDouble(entry -> entry.getValue().getQuantity() * entry.getValue().getVolume()).findFirst().orElse(0);
+            sum += elem.entrySet().stream().mapToDouble(entry -> entry.getValue().getQuantity() * entry.getValue().getVolume()).sum();
         }
 
         int cellsSum = (int)Math.ceil(sum);
@@ -140,69 +140,63 @@ public class BFSAlgorithm {
         order.sort(Comparator.comparingDouble(o -> o.entrySet().iterator().next().getValue().getVolume()));
         Collections.reverse(order);
 
-        /*Iterator for the picked packs*/
+        List<Map<String, Content>> result = new ArrayList<>();
         Iterator packsIterator = packs.iterator();
-        int currentlyLeftCells = 0;
-        if(packsIterator.hasNext()) currentlyLeftCells = (int)packsIterator.next();
+        int cells = (int)packsIterator.next();
 
-        /*Initiate the list of packs (result) and its iterator*/
-        List<Map<String, Content>> result = this.initiateListOfPacks(packs);
-        Iterator resultIterator = result.iterator();
+        double currentPackCells = (double) cells;
 
-        /*Pull the first pack from the list of initiated packs to start to fill it with beer bottles*/
-        Map<String, Content> currentPack = null;
-        if(resultIterator.hasNext()) currentPack = (Map<String, Content>) resultIterator.next();
+        List<BeerInfo> beerChain = createBeerCain(order);
 
-        /*Gradually move across the order simultaneously filling the current and next ones packs*/
-        for(Map<String, BeerInfo> map : order){
+        Content currentContent = new Content();
+        Map<String, Content> map = null;
+        int counter = 0;
+        for(BeerInfo info : beerChain){
+            currentPackCells -= info.getVolume();
+            counter++;
 
-            /*Get the next beer info from the order*/
-            BeerInfo info = map.entrySet().iterator().next().getValue();
+            if(currentPackCells == 0 || counter == beerChain.size()){
+                currentContent.addBottleOfBeer(info);
 
-            /*Calculate the quantity of cells taking by beer bottles according to the volume of a bottle (1 or 0.5)*/
-            int quantity = (int)Math.round(info.getQuantity() * info.getVolume());
+                map = new HashMap<>();
+                map.put("boxPack_" + cells, currentContent);
+                result.add(map);
 
-
-            if(currentlyLeftCells - quantity > 0){
-                currentlyLeftCells -= quantity;
-                if(currentPack != null) currentPack.entrySet().iterator().next().getValue().getContent().add(info);
-                else throw new Exception("Current pack is null");
-            }
-
-            else if(currentlyLeftCells - quantity == 0){
-                if(packsIterator.hasNext()) currentlyLeftCells  = (int)packsIterator.next();
-                else throw new Exception("Exception. The quantity of ordered bottles of beer is more than quantity of cells of picked packs");
-                if(currentPack != null) currentPack.entrySet().iterator().next().getValue().getContent().add(info);
-                else throw new Exception("Current pack is null");
-            }
-
-            else{
-                int remaining = currentlyLeftCells - quantity;
-                int firstBottles = currentlyLeftCells;
-                int secondBottles = remaining;
-                if(info.getVolume() != 1) {
-                    firstBottles = currentlyLeftCells * 2;
-                    secondBottles = info.getQuantity() - firstBottles;
+                if(counter != beerChain.size()){
+                    currentContent = new Content();
+                    if (packsIterator.hasNext())cells = (int) packsIterator.next();
+                    currentPackCells = (double) cells;
                 }
+            }
 
-                BeerInfo first = new BeerInfo(info.getName(), info.getVolume(), firstBottles);
-                BeerInfo second = new BeerInfo(info.getName(), info.getVolume(), secondBottles);
+            else if(currentPackCells > 0){
+                currentContent.addBottleOfBeer(info);
+            }
 
-                if(currentPack != null)currentPack.entrySet().iterator().next().getValue().getContent().add(first);
+            else throw new Exception("The volume of a bottle is more than left in the current pack");
+        }
 
-                if(resultIterator.hasNext())currentPack = (Map<String, Content>)resultIterator.next();
-                else throw new Exception("Current pack is null");
+        return result;
 
-                if(currentPack != null)currentPack.entrySet().iterator().next().getValue().getContent().add(second);
+    }
 
-                if(packsIterator.hasNext()) currentlyLeftCells  = (int)packsIterator.next();
-                else throw new Exception("Exception. The quantity of ordered bottles of beer is more than quantity of cells of picked packs");
+    private List<BeerInfo> createBeerCain(List<Map<String, BeerInfo>> order){
+        List<BeerInfo> chain = new ArrayList<>();
 
-                currentlyLeftCells  -= remaining;
+        for(Map<String, BeerInfo> m : order){
+            BeerInfo info = m.entrySet().iterator().next().getValue();
+
+            int quantity = info.getQuantity();
+            String name = info.getName();
+            double volume = info.getVolume();
+
+            for(int i = 0; i < quantity; i++){
+                chain.add(new BeerInfo(name, volume, 1));
             }
         }
-        return result;
+        return chain;
     }
+
 
     /**
      * Initiates the list of packs according to picked ones,

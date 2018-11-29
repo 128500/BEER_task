@@ -37,6 +37,10 @@ public class BeerInfo {
         return quantity;
     }
 
+    void setQuantity(int quantity){
+        this.quantity = quantity;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("BeerInfo{");
