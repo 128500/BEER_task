@@ -54,7 +54,7 @@ public class BFSAlgorithm {
      * @param cellsSum overall sum of all bottles in order
      * @return list of packs of available sizes (@see PACKS)
      */
-    List<Integer> findQuantityOfBeerPacks(int cellsSum){
+    private List<Integer> findQuantityOfBeerPacks(int cellsSum){
 
         /*If there are less than 7 bottles, return the only suitable pack of 6 cells size*/
         if(cellsSum <= 6) {
@@ -126,15 +126,14 @@ public class BFSAlgorithm {
 
 
     /**
-     * THIS IS A MESS. THIS METHOD MUST BE REFACTORED (MAYBE MORE THAN ONE TIME)!!!
      * 'Packs' the order into picked beer packs (boxes)
      * @param packs list of picked packs
      * @param order order to be packed
      * @return list of packs with beer bottles in it
      * @throws Exception if there is a lack of cells in picked packs and the beer order cannot be
-     *  placed in them. OMG that's a fail.
+     *  fully placed in them. OMG that's a fail.
      */
-    List<Map<String, Content>> packBoxes(List<Integer> packs, List<Map<String, BeerInfo>> order) throws Exception{
+    private List<Map<String, Content>> packBoxes(List<Integer> packs, List<Map<String, BeerInfo>> order) throws Exception{
 
         /*Sorts the list of order so that the bottles of 0.5 volume will be at the end of the list*/
         order.sort(Comparator.comparingDouble(o -> o.entrySet().iterator().next().getValue().getVolume()));
@@ -146,15 +145,27 @@ public class BFSAlgorithm {
 
         double currentPackCells = (double) cells;
 
-        List<BeerInfo> beerChain = createBeerCain(order);
+        /*Create a chain of beer bottles (one in the link) so that we can go through it (each bottle separately)*/
+        List<BeerInfo> beerChain = createBeerChain(order);
 
+        /*Create Content entity representing the content of the beer pack (bottles of beer)*/
         Content currentContent = new Content();
         Map<String, Content> map = null;
+
+        /*Set up the counter for limitation purposes*/
         int counter = 0;
+
+        /*Looping through the chain of bottles, spread them between the picked beer packs*/
         for(BeerInfo info : beerChain){
+
+            /*Subtract the volume of the current bottle from the volume(size) of the currently filling pack
+             * so that we can know how much is left
+             */
             currentPackCells -= info.getVolume();
             counter++;
 
+            /*If cells of the current pack ended or we have the end of beer chain, we create the new
+            * pack of beer and put it in the list (of packs)*/
             if(currentPackCells == 0 || counter == beerChain.size()){
                 currentContent.addBottleOfBeer(info);
 
@@ -164,15 +175,16 @@ public class BFSAlgorithm {
 
                 if(counter != beerChain.size()){
                     currentContent = new Content();
-                    if (packsIterator.hasNext())cells = (int) packsIterator.next();
+                    if (packsIterator.hasNext()) cells = (int) packsIterator.next();
                     currentPackCells = (double) cells;
                 }
             }
-
+            /*If still have the room in the current beer pack  just adding the bottle to the content*/
             else if(currentPackCells > 0){
                 currentContent.addBottleOfBeer(info);
             }
-
+            /*If the volume of the current bottle is more than left in the pack -
+            throw exception (such thing MUST NOT happen here)*/
             else throw new Exception("The volume of a bottle is more than left in the current pack");
         }
 
@@ -180,7 +192,13 @@ public class BFSAlgorithm {
 
     }
 
-    private List<BeerInfo> createBeerCain(List<Map<String, BeerInfo>> order){
+    /**
+     * Creates a chain of ordered beer bottles (list of BeerInfo entities).
+     * Each link of the chain contains just one bottle of beer with info about it.
+     * @param order the list of ordered beer
+     * @return a chain of ordered beer bottles (one in a link)
+     */
+    private List<BeerInfo> createBeerChain(List<Map<String, BeerInfo>> order){
         List<BeerInfo> chain = new ArrayList<>();
 
         for(Map<String, BeerInfo> m : order){
@@ -196,23 +214,4 @@ public class BFSAlgorithm {
         }
         return chain;
     }
-
-
-    /**
-     * Initiates the list of packs according to picked ones,
-     * preparing them for filling with bottles
-     * @param packs list of picked bottles
-     * @return list of prepared packs
-     */
-    List<Map<String, Content>> initiateListOfPacks(List<Integer> packs){
-        List<Map<String, Content>> result = new ArrayList<>();
-        for(int cells : packs){
-            String packName = "BoxPack_" + cells;
-            Map<String, Content> map = new HashMap<>();
-            map.put(packName, new Content());
-            result.add(map);
-        }
-        return result;
-    }
-
 }
